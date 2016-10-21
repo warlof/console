@@ -22,6 +22,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 namespace Seat\Console\Commands\Seat\Queue;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
 use Seat\Services\Data\Queue;
 
 /**
@@ -38,7 +39,7 @@ class Status extends Command
      *
      * @var string
      */
-    protected $signature = 'seat:queue:status {--live : Follow the progress live}';
+    protected $signature = 'seat:queue:status {--live : Follow the progress live} {--scheduler : Store stat in cache (up to 4320 records)}';
 
     /**
      * The console command description.
@@ -96,6 +97,34 @@ class Status extends Command
                 // Sleep for a second and update again.
                 sleep(2);
             }
+
+            return;
+        }
+
+        // use scheduler parameter in order to avoid output and just store data in cache
+        // it is used by web package in order to generate a jobs health chart in queue dashboard
+        if ($this->option('scheduler')) {
+            $plots = array();
+            if (Cache::has('jobs.stats.monthly')) {
+                $plots = Cache::pull('jobs.stats.monthly');
+            }
+
+            // one month stats with 2 minutes plots
+            // if we exceed 21 600 plots, remove the oldest one
+            // we always add the new plot at the end
+            if (count($plots) > 21600) {
+                array_shift($plots);
+            }
+
+            $last_stats = $this->count_summary();
+            array_push($plots, (object) [
+                'timestamp' => time(),
+                'working' => $last_stats['working_jobs'],
+                'failed' => $last_stats['error_jobs'],
+                'queued' => $last_stats['queued_jobs']
+            ]);
+
+            Cache::forever('jobs.stats.monthly', $plots);
 
             return;
         }
