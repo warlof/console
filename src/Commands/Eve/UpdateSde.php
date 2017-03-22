@@ -27,6 +27,9 @@ use GuzzleHttp\Client;
 use Illuminate\Console\Command;
 use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Support\Facades\DB;
+use Seat\Console\Readers\ActivityReader;
+use Seat\Console\Readers\CategoryReader;
+use Seat\Console\Readers\FlagReader;
 use Seat\Services\Helpers\AnalyticsContainer;
 use Seat\Services\Jobs\Analytics;
 use Seat\Services\Settings\Seat;
@@ -113,6 +116,11 @@ class UpdateSde extends Command
             return;
         }
 
+        $this->updateCategories();
+        $this->updateActivities();
+        $this->updateFlags();
+
+        /*
         // Request the json from eveseat/resources
         $this->json = $this->getJsonResource();
 
@@ -213,6 +221,7 @@ class UpdateSde extends Command
             ->set('el', 'console')
             ->set('ev', $this->json->version)))
             ->onQueue('medium'));
+        */
 
     }
 
@@ -394,5 +403,49 @@ class UpdateSde extends Command
         $bar->finish();
         $this->line('');
 
+    }
+
+    private function updateCategories()
+    {
+        $this->line('Preparing to import data from categoryIDs');
+
+        $name = 'sde-20170216-TRANQUILITY';
+        $reader = new CategoryReader(storage_path() . '/sde/' . $name . '/fsd/categoryIDs.yaml');
+
+        $this->line('Starting import...');
+
+        $reader->parse();
+
+        $this->line('Import complete - Error(' . $reader->getError() . ') - Success (' . $reader->getSuccess() . ')');
+    }
+
+    private function updateActivities()
+    {
+        $this->line('Preparing to import data from ramActivities');
+
+        // TODO
+        $name = 'sde-20170216-TRANQUILITY';
+        $reader = new ActivityReader(storage_path() . '/sde/' . $name . '/bsd/ramActivities.yaml');
+
+        $this->line('Starting import...');
+
+        $reader->parse();
+
+        $this->line('Import complete - Error (' . $reader->getError() . ') - Success (' . $reader->getSuccess() . ')');
+    }
+
+    private function updateFlags()
+    {
+        $this->line('Preparing to import data from invFlags');
+
+        // TODO
+        $name = 'sde-20170216-TRANQUILITY';
+        $reader = new FlagReader(storage_path() . '/sde/' . $name . '/bsd/invFlags.yaml');
+
+        $this->line('Starting import...');
+
+        $reader->parse();
+
+        $this->line('Import complete - Error (' . $reader->getError() . ') - Success (' . $reader->getSuccess() . ')');
     }
 }

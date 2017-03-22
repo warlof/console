@@ -20,6 +20,7 @@
         "laravel/framework": "5.3.*",
         "eveseat/eveapi": "2.0.*",
         "eveseat/services": "2.0.*",
-        "guzzlehttp/guzzle": "^6.2"
+        "guzzlehttp/guzzle": "^6.2",
+        "symfony/yaml": "^3.2"
     }
 }
